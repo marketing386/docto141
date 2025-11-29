@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Онлайн-педиатр Артём Логачёв</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+  <meta name="description" content="Доказательный педиатр Артём Логачёв. Онлайн-консультации, сопровождение новорожденных и поддержка родителей.">
+
+  <!-- Шрифты -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vollkorn:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --c1:#87dfe9;         /* пастельный лазурный */
+      --c2:#a77aca;         /* лавандовый */
+      --c-dark:#111827;
+      --c-muted:#6b7280;
+      --radius-xl:32px;
+      --radius-l:24px;
+      --shadow-soft:0 18px 45px rgba(15,23,42,.12);
+      --transition-fast:.22s ease-out;
+      --transition-med:.35s ease-out;
+      --z-modal: 1000;
+      --z-header: 100;
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body{
+      font-family:"Vollkorn", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--c-dark);
+      min-height:100vh;
+      -webkit-font-smoothing:antialiased;
+      background:transparent;
+      overflow-x: hidden; /* Убираем горизонтальный скролл */
+      position: relative;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    img{
+      max-width:100%;
+      height: auto;
+      display:block;
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+      transition: color var(--transition-fast);
+    }
+
+    button{
+      font-family:inherit;
+      border:none;
+      outline:none;
+      cursor: pointer;
+    }
+
+    /* --- ФОН (Медицинские дудлы, оптимизированный, в одну сторону) --- */
+    .med-animated-bg{
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      pointer-events:none;
+      overflow:hidden;
+      background:
+        radial-gradient(1200px 600px at 50% 20%, rgba(255,255,255,.9), rgba(255,255,255,.4)),
+        linear-gradient(135deg,
+          color-mix(in srgb, var(--c1) 85%, white 15%),
+          color-mix(in srgb, var(--c2) 85%, white 15%)
+        );
+      transform: translateZ(0); /* Аппаратное ускорение */
+    }
+
+    .med-animated-bg::before,
+    .med-animated-bg::after{
+      content:"";
+      position:absolute;
+      top: 0; left: 0; bottom: 0;
+      /* Ширина 200% для бесшовной прокрутки */
+      width: 200%; 
+      background-repeat:repeat;
+      /* Увеличенный размер паттерна для снижения нагрузки */
+      background-size: 800px 460px; 
+      opacity:.08;
+      will-change: transform;
+    }
+
+    .med-animated-bg::before{
+      /* Слой 1 */
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='460' viewBox='0 0 800 460'%3E%3Cg fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='50' cy='50' r='10'/%3E%3Cpath d='M150 80 L170 100 M170 80 L150 100'/%3E%3Crect x='300' y='40' width='30' height='20' rx='5'/%3E%3Cpath d='M500 150 Q520 120 540 150 T580 150'/%3E%3Ccircle cx='700' cy='200' r='15'/%3E%3Cpath d='M100 300 L120 300 M110 290 L110 310'/%3E%3C/g%3E%3C/svg%3E");
+      /* Движение слева направо */
+      animation: bgScroll 60s linear infinite;
+    }
+
+    .med-animated-bg::after{
+      /* Слой 2 (тоже слева направо, другая скорость для параллакса) */
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='460' viewBox='0 0 800 460'%3E%3Cg fill='none' stroke='%23555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M50 400 L70 380'/%3E%3Ccircle cx='250' cy='350' r='8'/%3E%3Crect x='600' y='300' width='20' height='20' rx='4' transform='rotate(15)'/%3E%3C/g%3E%3C/svg%3E");
+      opacity:.05;
+      animation: bgScroll 90s linear infinite;
+    }
+
+    /* Анимация прокрутки фона */
+    @keyframes bgScroll{
+      0%{ transform: translateX(-50%); }
+      100%{ transform: translateX(0); }
+    }
+
+    /* На мобильных отключаем второй слой для производительности */
+    @media (max-width: 768px) {
+      .med-animated-bg::after { display: none; }
+      .med-animated-bg::before { opacity: 0.06; animation-duration: 80s; }
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      .med-animated-bg::before, .med-animated-bg::after{ animation:none; }
+    }
+
+    /* Layout */
+    .page-wrap{ width:100%; max-width:1120px; margin:0 auto; padding:18px 16px 72px; }
+    section{ margin-bottom:60px; scroll-margin-top: 90px; }
+    .section-title{ font-size:30px; line-height:1.1; margin-bottom:18px; }
+    .section-lead{ font-size:16px; color:var(--c-muted); margin-bottom:24px; }
+
+    /* Шапка */
+    .site-header{
+      position:sticky; top:0; z-index:var(--z-header); padding:10px 0 14px;
+      backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+      background:linear-gradient(to bottom, rgba(255,255,255,.92), rgba(255,255,255,.85));
+      border-bottom:1px solid rgba(148,163,184,.35);
+    }
+    .header-inner{
+      max-width:1120px; margin:0 auto; padding:0 16px;
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; z-index: 102; position: relative; }
+    .brand-logo{
+      width:40px; height:40px; border-radius:999px;
+      background:linear-gradient(135deg, var(--c2), var(--c1));
+      box-shadow:0 10px 25px rgba(15,23,42,.28);
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+      flex-shrink: 0;
+    }
+    .brand-logo img{ width:100%; height:100%; object-fit:cover; }
+    .brand-text{ display:flex; flex-direction:column; font-family:"Inter", system-ui, sans-serif; line-height:1.1; }
+    .brand-title{ font-weight:600; font-size:16px; }
+    .brand-sub{ font-size:12px; color:var(--c-muted); }
+
+    /* Навигация */
+    .nav{ display:flex; align-items:center; gap:6px; flex: 1; }
+    
+    .nav-link{
+      font-family:"Inter", system-ui, sans-serif; font-size:13px; padding:7px 11px;
+      border-radius:999px; background:rgba(255,255,255,.7); border:1px solid transparent;
+      transition: all var(--transition-fast);
+      cursor:pointer; white-space:nowrap;
+    }
+    .nav-link:hover{
+      background:linear-gradient(135deg, var(--c2), var(--c1)); color:#fff;
+      border-color:rgba(255,255,255,.7); box-shadow:0 10px 25px rgba(15,23,42,.28); transform:translateY(-1px);
+    }
+    
+    .nav-link-primary{
+      background:linear-gradient(135deg, var(--c2), var(--c1)); color:#fff;
+      box-shadow:0 10px 25px rgba(15,23,42,.26); font-weight:600;
+      margin-left: auto;
+    }
+    .nav-link-primary:hover{ filter:brightness(1.03); transform:translateY(-1px) scale(1.01); }
+
+    .header-burger{ display:none; }
+
+    /* Hero */
+    .hero{ display:grid; grid-template-columns:1.2fr 1fr; gap:32px; align-items:center; margin-top:24px; }
+    .hero-kicker{ font-family:"Inter", system-ui, sans-serif; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-muted); margin-bottom:12px; }
+    .hero-title{ font-size:34px; line-height:1.1; margin-bottom:16px; }
+    .hero-sub{ font-size:16px; color:var(--c-muted); margin-bottom:20px; }
+    
+    .hero-badges{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:24px; }
+    .badge-pill{
+      display:inline-flex; align-items:center; gap:8px; padding:6px 10px;
+      border-radius:999px; background:rgba(255,255,255,.9);
+      box-shadow:0 12px 30px rgba(15,23,42,.18); font-size:12px; font-family:"Inter", system-ui, sans-serif;
+    }
+    .badge-dot{ width:8px; height:8px; border-radius:999px; background:radial-gradient(circle at 30% 30%, #f97316, #be185d); box-shadow:0 0 0 4px rgba(251,113,133,.35); flex-shrink: 0; }
+
+    .hero-actions{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .btn{
+      border:none; cursor:pointer; font-family:"Inter", system-ui, sans-serif;
+      border-radius:999px; padding:11px 20px; font-size:14px; font-weight:500;
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      background:#fff; color:var(--c-dark); box-shadow:0 14px 35px rgba(15,23,42,.18);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+      text-align: center;
+    }
+    .btn-primary{ background:linear-gradient(135deg, var(--c2), var(--c1)); color:#fff; }
+    .btn-primary:active{ transform: scale(0.98); }
+    .btn-outline{ background:rgba(255,255,255,.9); }
+
+    .hero-media{ position:relative; display:flex; justify-content:center; }
+    .hero-photo-card{
+      position:relative; width:min(360px,100%); border-radius:32px; overflow:hidden;
+      box-shadow:var(--shadow-soft); background:#0f172a; transform:translateY(0);
+      animation:floatHero 9s ease-in-out infinite;
+      will-change: transform;
+    }
+    .hero-photo-card img{ width:100%; height:auto; object-fit:cover; display:block; }
+    .hero-photo-overlay{
+      position:absolute; inset:auto 14px 16px 14px; border-radius:24px; padding:10px 14px;
+      background:linear-gradient(135deg, rgba(15,23,42,.92), rgba(15,23,42,.8)); color:#e5e7eb;
+      display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+      font-family:"Inter", system-ui, sans-serif; font-size:11px;
+    }
+    .hero-photo-overlay strong{ display:block; font-size:12px; margin-bottom:3px; color:#f9fafb; }
+    .hero-photo-tag{ padding:4px 8px; border-radius:999px; background:rgba(15,23,42,.7); font-size:10px; white-space:nowrap; }
+    
+    @keyframes floatHero{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+
+    .hero-strip{ margin-top:20px; display:flex; align-items:center; gap:16px; }
+    .hero-strip-photo{ width:62px; height:62px; border-radius:999px; overflow:hidden; box-shadow:0 10px 30px rgba(15,23,42,.26); flex-shrink:0; }
+    .hero-strip-rail{ flex:1 1 auto; border-radius:999px; background:rgba(255,255,255,.9); box-shadow:0 20px 50px rgba(15,23,42,.28); padding:6px 10px; position:relative; overflow:hidden; }
+    .hero-strip-inner{ display:flex; gap:8px; white-space:nowrap; animation:stripScroll 20s linear infinite; will-change: transform; }
+    .hero-strip-chip{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:#f9fafb; font-family:"Inter", system-ui, sans-serif; font-size:12px; box-shadow:0 10px 25px rgba(15,23,42,.12); }
+    .chip-dot{ width:7px; height:7px; border-radius:999px; background:radial-gradient(circle at 30% 30%, var(--c1), var(--c2)); }
+    @keyframes stripScroll{ 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+
+    /* Карточки общие */
+    .card{ border-radius:var(--radius-xl); background:rgba(255,255,255,.96); box-shadow:var(--shadow-soft); padding:22px 22px 20px; backdrop-filter:blur(14px); }
+    
+    /* About */
+    .about-grid{ display:grid; grid-template-columns:1.1fr 1fr; gap:22px; align-items:flex-start; }
+    .about-main p{ font-size:15px; line-height:1.55; color:var(--c-muted); margin-bottom:14px; }
+    .about-bullets{ font-size:14px; color:var(--c-muted); padding-left:18px; margin-bottom:14px; }
+    .about-bullets li+li{ margin-top:6px; }
+    .about-aside{ display:flex; flex-direction:column; gap:12px; }
+    
+    /* Слот для фото врача в блоке "Обо мне" */
+    .about-photo {
+      width: 100%;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(15,23,42,.15);
+      margin-bottom: 8px;
+    }
+    .about-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .about-highlight{ font-size:14px; color:#111827; background:linear-gradient(135deg, rgba(135,223,233,.16), rgba(167,122,202,.16)); border-radius:18px; padding:10px 14px; }
+    .about-highlight ul{ padding-left:16px; margin-top:6px; font-size:13px; color:var(--c-muted); }
+    .about-highlight li+li{ margin-top:4px; }
+
+    /* Форматы */
+    .formats-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+    .format-card{
+      display:flex; flex-direction:column; justify-content:space-between; gap:10px;
+      padding:18px 16px 16px; border-radius:var(--radius-l); background:rgba(255,255,255,.98);
+      box-shadow:0 16px 40px rgba(15,23,42,.18); border:1px solid rgba(148,163,184,.28);
+      position:relative; overflow:hidden; transform:translateZ(0);
+      transition: transform var(--transition-med), box-shadow var(--transition-med);
+    }
+    .format-card:hover{ transform:translateY(-4px); box-shadow:0 20px 48px rgba(15,23,42,.26); }
+    .format-icon{
+      width:30px; height:30px; border-radius:999px; background:radial-gradient(circle at 20% 20%, var(--c2), var(--c1));
+      display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; font-family:"Inter", system-ui, sans-serif;
+      margin-bottom:6px; box-shadow:0 10px 25px rgba(15,23,42,.22);
+    }
+    .format-title{ font-size:15px; font-weight:600; margin-bottom:4px; }
+    .format-desc{ font-size:13px; color:var(--c-muted); margin-bottom:6px; }
+    .format-meta{ font-size:12px; color:var(--c-muted); margin-bottom:6px; }
+    .format-price{ font-family:"Inter", system-ui, sans-serif; font-size:15px; font-weight:600; margin-bottom:8px; }
+    .format-footer{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto; }
+    .format-chip{ font-size:11px; font-family:"Inter", system-ui, sans-serif; padding:4px 8px; border-radius:999px; background:rgba(135,223,233,.18); color:#0f172a; white-space:nowrap; }
+    .btn-small{ padding:7px 12px; font-size:12px; box-shadow:0 10px 24px rgba(15,23,42,.18); }
+
+    /* Форма */
+    .form-section-wrap{ max-width:640px; margin:0 auto; }
+    .card-form{
+      border-radius:var(--radius-xl); background:rgba(255,255,255,.98); box-shadow:var(--shadow-soft);
+      padding:24px 24px 22px; font-family:"Inter", system-ui, sans-serif; font-size:13px;
+    }
+    .card-form h3{ font-family:"Vollkorn", serif; font-size:22px; margin-bottom:8px; text-align:center; }
+    .card-form p{ font-size:13px; color:var(--c-muted); margin-bottom:18px; text-align:center; }
+    .form-grid{ display:flex; flex-direction:column; gap:12px; margin-bottom:12px; }
+    .form-field label{ display:block; font-size:12px; margin-bottom:4px; }
+    .form-field input, .form-field textarea, .form-field select{
+      width:100%; border-radius:12px; border:1px solid rgba(148,163,184,.7); padding:10px 12px;
+      font-family:inherit; font-size:13px; /* На мобилке будет 16px */
+      background:rgba(248,250,252,.95); outline:none;
+      transition:border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+    .form-field input:focus, .form-field textarea:focus, .form-field select:focus{
+      border-color:var(--c2); box-shadow:0 0 0 1px rgba(167,122,202,.5); background:#fff;
+    }
+    .form-field textarea{ min-height:84px; resize:vertical; }
+    .form-footer{ display:flex; flex-direction:column; gap:10px; margin-top:8px; align-items:center; text-align:center; }
+    .policy-note{ font-size:11px; color:var(--c-muted); }
+    .policy-note a{ color:var(--c2); font-weight:600; }
+    .submit-status{ font-size:11px; min-height:15px; }
+    .submit-status.ok{ color:#16a34a; }
+    .submit-status.err{ color:#b91c1c; }
+
+    /* Чек-лист */
+    .checklist-wrap{ display:grid; grid-template-columns:1.1fr 0.85fr; gap:24px; align-items:center; }
+    .checklist-points{ font-size:14px; color:var(--c-muted); margin-bottom:14px; }
+    .checklist-points li+li{ margin-top:4px; }
+    .btn-checklist{ background:linear-gradient(135deg, var(--c2), var(--c1)); color:#fff; }
+    .checklist-cover{ border-radius:26px; overflow:hidden; box-shadow:0 18px 44px rgba(15,23,42,.24); background:#020617; }
+    .checklist-cover img{ width:100%; height:100%; object-fit:cover; }
+
+    /* FAQ */
+    .faq-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .faq-item{
+      border-radius:18px; background:rgba(255,255,255,.98); box-shadow:0 12px 32px rgba(15,23,42,.18);
+      overflow:hidden; cursor:pointer; transition: transform var(--transition-med), box-shadow var(--transition-med);
+    }
+    .faq-item:hover{ transform:translateY(-2px); box-shadow:0 16px 40px rgba(15,23,42,.22); }
+    .faq-header{ padding:12px 14px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:14px; }
+    .faq-title{ font-weight:600; }
+    .faq-toggle{
+      width:20px; height:20px; border-radius:999px; border:1px solid rgba(148,163,184,.7);
+      display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--c-muted); flex-shrink:0;
+    }
+    .faq-body{ padding:0 14px 0; max-height:0; overflow:hidden; font-size:13px; color:var(--c-muted); transition:max-height .28s ease, padding-bottom .28s ease; will-change: max-height; }
+    .faq-item.open .faq-body{ padding-bottom:12px; max-height:400px; }
+    .faq-item.open .faq-toggle{ background:linear-gradient(135deg, var(--c1), var(--c2)); color:#fff; border-color:transparent; }
+
+    /* Карусели */
+    .carousel-section-card{ border-radius:var(--radius-xl); background:rgba(255,255,255,.98); box-shadow:var(--shadow-soft); padding:18px 16px 20px; }
+    .carousel-shell{ position:relative; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .card-carousel{ position:relative; width:100%; max-width:460px; margin:0 auto; overflow: hidden; }
+    .carousel-track{ display:flex; align-items:center; gap:16px; transition:transform .45s ease; will-change: transform; }
+    .carousel-item{
+      flex:0 0 100%; border-radius:26px; overflow:hidden; background:#020617;
+      box-shadow:0 20px 50px rgba(15,23,42,.32); transform:scale(.95); opacity:.4; filter:blur(2px);
+      transition: transform .45s ease, opacity .45s ease, filter .45s ease;
+      will-change: transform, opacity;
+    }
+    .carousel-item img{ width:100%; height:100%; object-fit:cover; }
+    .carousel-item.is-active{ transform:scale(1); opacity:1; filter:none; }
+    
+    .carousel-arrow{
+      position:absolute; top:50%; transform:translateY(-50%); width:36px; height:36px;
+      border-radius:999px; border:none; cursor:pointer; background:rgba(15,23,42,.85); color:#fff;
+      display:flex; align-items:center; justify-content:center; font-size:16px; z-index: 2;
+      box-shadow:0 10px 24px rgba(15,23,42,.35); 
+    }
+    .carousel-arrow.prev{ left:4px; }
+    .carousel-arrow.next{ right:4px; }
+
+    /* Соцсети и Контакты */
+    .social-block{ border-radius:var(--radius-xl); background:rgba(255,255,255,.98); box-shadow:var(--shadow-soft); padding:18px 20px 20px; }
+    .social-title-lg{ font-size:22px; font-family:"Vollkorn", serif; margin-bottom:16px; text-align:center; }
+    .social-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; justify-content:center; }
+    .social-icon{
+      width:40px; height:40px; border-radius:999px; overflow:hidden; box-shadow:0 10px 24px rgba(15,23,42,.22);
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      transition:transform var(--transition-fast);
+    }
+    .social-icon img{ width:100%; height:100%; object-fit:cover; }
+    
+    .qr-row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:10px; max-width:500px; margin-inline:auto; }
+    
+    .service-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: #fff; border-radius: 16px;
+      padding: 12px 16px;
+      box-shadow: 0 10px 25px rgba(15,23,42,.15);
+      font-weight: 600; font-size: 14px;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .service-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 35px rgba(15,23,42,.22);
+    }
+    .service-btn img {
+      width: 24px; height: 24px; object-fit: contain;
+    }
+    
+    .ext-links{ margin-top:14px; display:flex; flex-direction:column; gap:6px; align-items:center; text-align:center; }
+    .ext-links a{ display:inline-flex; align-items:center; gap:6px; font-size:14px; color:var(--c2); }
+    .ext-links a span{ text-decoration:underline; text-decoration-thickness:1px; }
+
+    /* Дисклеймер */
+    .disclaimer-card{
+      border-radius:var(--radius-xl); padding:14px 18px;
+      background:linear-gradient(135deg,#fee2e2,#fecaca); box-shadow:0 16px 40px rgba(185,28,28,.4);
+      font-family:"Inter", system-ui, sans-serif; font-size:13px;
+      display:flex; align-items:flex-start; gap:10px; color:#7f1d1d;
+    }
+    .disclaimer-icon{
+      width:26px; height:26px; border-radius:999px; background:#fb7185; color:#fff;
+      display:flex; align-items:center; justify-content:center; margin-top:2px;
+      box-shadow:0 12px 30px rgba(248,113,113,.8); flex-shrink:0;
+    }
+    .disclaimer-title{ font-weight:700; margin-bottom:4px; }
+
+    /* Scroll Reveal */
+    .js-scroll{ opacity:0; transform:translateY(18px); transition: opacity .4s ease-out, transform .4s ease-out; will-change: opacity, transform; }
+    .js-scroll.visible{ opacity:1; transform:translateY(0); }
+
+    /* --- МОДАЛЬНОЕ ОКНО --- */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: var(--z-modal);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-backdrop.is-visible {
+      opacity: 1; pointer-events: auto;
+    }
+    .modal-content {
+      background: #fff;
+      width: 100%; max-width: 540px;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      position: relative;
+      padding: 24px;
+      transform: translateY(20px);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .modal-backdrop.is-visible .modal-content {
+      transform: translateY(0);
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px;
+      border-radius: 50%; background: #f1f5f9;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: var(--c-muted);
+      cursor: pointer; transition: background 0.2s;
+    }
+    .modal-close:hover { background: #e2e8f0; color: var(--c-dark); }
+    
+    .modal-body h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; font-family: "Vollkorn", serif; }
+    .modal-price { font-size: 16px; font-weight: 600; color: var(--c2); margin-bottom: 16px; }
+    .modal-text { font-size: 14px; line-height: 1.55; color: var(--c-dark); }
+    .modal-text p { margin-bottom: 12px; }
+    .modal-text ul { padding-left: 20px; margin-bottom: 12px; }
+    .modal-text li { margin-bottom: 4px; }
+    .modal-text h4 { font-weight: 600; margin-top: 16px; margin-bottom: 8px; color: var(--c-dark); }
+
+    /* --- MEDIA QUERIES (Mobile Adaptation) --- */
+
+    @media (max-width: 960px){
+      .hero{ grid-template-columns:1fr; }
+      .hero-media{ order:-1; }
+      .formats-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .checklist-wrap{ grid-template-columns:1fr; }
+    }
+
+    @media (max-width: 720px){
+      .header-inner{ gap:10px; }
+      
+      /* Мобильное меню (выпадающий список) */
+      .nav {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 24px;
+        gap: 12px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        display: none;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        border-radius: 0 0 24px 24px;
+      }
+      
+      .nav.is-open {
+        display: flex;
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .nav-link {
+        text-align: center;
+        padding: 12px;
+        font-size: 16px;
+      }
+      
+      .nav-link-primary {
+        margin-left: 0; 
+        margin-top: 8px;
+        background: linear-gradient(135deg, var(--c2), var(--c1));
+        color: #fff;
+      }
+
+      /* Бургер */
+      .header-burger{
+        display:flex; width:40px; height:40px; border-radius:999px; border:none;
+        background:rgba(255,255,255,.9); box-shadow:0 10px 25px rgba(15,23,42,.24);
+        align-items:center; justify-content:center; cursor:pointer;
+        z-index: 101;
+      }
+      .header-burger span{ width:18px; height:2px; border-radius:999px; background:#111827; position:relative; transition: background 0.2s; }
+      .header-burger span::before, .header-burger span::after{ content:""; position:absolute; left:0; right:0; height:2px; border-radius:999px; background:#111827; transition: transform 0.2s, top 0.2s, bottom 0.2s; }
+      .header-burger span::before{ top:-6px; }
+      .header-burger span::after{ bottom:-6px; }
+      
+      .nav.is-open ~ .header-burger span { background: transparent; }
+      .nav.is-open ~ .header-burger span::before { top:0; transform: rotate(45deg); }
+      .nav.is-open ~ .header-burger span::after { bottom:0; transform: rotate(-45deg); }
+
+      /* Адаптация контента */
+      .page-wrap{ padding-inline:16px; }
+      .section-title { font-size: 26px; }
+      .card { padding: 16px; }
+      
+      .about-grid { grid-template-columns: 1fr; }
+      
+      .form-field input, .form-field textarea, .form-field select { font-size: 16px; }
+      
+      .formats-grid{ grid-template-columns:1fr; }
+      .faq-grid{ grid-template-columns:1fr; }
+      
+      .hero-title { font-size: 28px; }
+      .hero-actions { justify-content: flex-start; }
+      .hero-photo-card { width: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="med-animated-bg" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="images/logo-doc-ladoshki.png" alt="Логотип">
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">Артём Логачёв</div>
+        <div class="brand-sub">врач-педиатр</div>
+      </div>
+    </div>
+
+    <nav class="nav" id="main-nav">
+      <a href="#about" class="nav-link" onclick="closeMenu()">Обо мне</a>
+      <a href="#formats" class="nav-link" onclick="closeMenu()">Услуги</a>
+      <a href="#checklist" class="nav-link" onclick="closeMenu()">Чек-лист</a>
+      <a href="#faq" class="nav-link" onclick="closeMenu()">FAQ</a>
+      <a href="#socials" class="nav-link" onclick="closeMenu()">Контакты</a>
+      <a href="#request-form" class="nav-link nav-link-primary" onclick="closeMenu()">Оставить заявку</a>
+    </nav>
+
+    <button class="header-burger" type="button" aria-label="Меню" onclick="toggleMenu()">
+      <span></span>
+    </button>
+  </div>
+</header>
+
+<main class="page-wrap">
+
+  <!-- HERO -->
+  <section id="hero" class="hero js-scroll">
+    <div>
+      <div class="hero-kicker">Папа, врач и ваш проводник в мир спокойного родительства</div>
+      <h1 class="hero-title">Педиатр, с которым не страшно</h1>
+      <p class="hero-sub">
+        Отличаю «надо срочно к врачу» от «можно выдохнуть».
+        Без запугиваний, лишних лекарств и с заботой о родительской нервной системе.
+      </p>
+
+      <div class="hero-badges">
+        <div class="badge-pill">
+          <span class="badge-dot"></span>
+          Мои дочки ни разу не пили антибиотики "на всякий случай"
+        </div>
+        <div class="badge-pill">
+          Сохраняю ваш бюджет на ненужных анализах
+        </div>
+        <div class="badge-pill">
+          4+ года практики
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="btn btn-primary" type="button" onclick="document.getElementById('request-form').scrollIntoView({behavior:'smooth'})">
+          Оставить заявку
+        </button>
+        <button class="btn btn-outline" type="button" onclick="document.getElementById('formats').scrollIntoView({behavior:'smooth'})">
+          Выбрать формат
+        </button>
+      </div>
+
+      <div class="hero-strip">
+        <div class="hero-strip-photo">
+          <img src="images/hero-strip-photo.jpg" alt="Артём Логачёв">
+        </div>
+        <div class="hero-strip-rail">
+          <div class="hero-strip-inner">
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Без мракобесия</div>
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Доказательная медицина</div>
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Спокойные родители</div>
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Здоровые дети</div>
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Без мракобесия</div>
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Доказательная медицина</div>
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Спокойные родители</div>
+            <div class="hero-strip-chip"><span class="chip-dot"></span>Здоровые дети</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-media">
+      <div class="hero-photo-card">
+        <img src="images/hero-doctor-main.jpg" alt="Педиатр Артём Логачёв" />
+        <div class="hero-photo-overlay">
+          <div>
+            <strong>Онлайн-поддержка</strong>
+            <span>Ответ в рабочее время</span>
+          </div>
+          <div class="hero-photo-tag">Доказательная медицина</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section id="request-form" class="js-scroll">
+    <div class="form-section-wrap">
+      <div class="card-form">
+        <h3>Оставить заявку на консультацию</h3>
+        <p>
+          Напишите, чем я могу вам помочь — я отвечу в течение 24 часов и помогу выбрать формат работы.
+        </p>
+
+        <form id="contact-form">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="name">Имя и возраст ребёнка *</label>
+              <input id="name" name="name" required placeholder="Например: Анна, сын 2,5 года">
+            </div>
+
+            <div class="form-field">
+              <label for="phone">Контакт для связи (телефон или Telegram) *</label>
+              <input id="phone" name="phone" required placeholder="+7 … или @username">
+            </div>
+
+            <div class="form-field">
+              <label for="format">Предпочитаемый формат</label>
+              <select id="format" name="format">
+                <option value="">Пока не определились</option>
+                <option>«Просто спросить» (20 мин)</option>
+                <option>Онлайн-консультация (24 часа)</option>
+                <option>Сопровождение по болезни (7 дней)</option>
+                <option>Сопровождение новорождённого (1 мес)</option>
+                <option>Сопровождение новорождённого (3 мес)</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="message">Кратко опишите ваш запрос *</label>
+              <textarea id="message" name="message" required placeholder="Напишите, чем я могу вам помочь (например: частые простуды, непонятные анализы, прикорм, сон и т.д.)"></textarea>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button class="btn btn-primary" type="submit">
+              Отправить заявку
+            </button>
+            <div class="policy-note">
+              Нажимая кнопку, вы соглашаетесь с
+              <a href="docs/politika-obrabotki-personalnyh-dannyh.pdf" target="_blank">Политикой обработки персональных данных</a>
+              и
+              <a href="docs/oferta-onlayn-konsultacii.pdf" target="_blank">Офертой</a>.
+            </div>
+            <div id="submit-status" class="submit-status"></div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMATS -->
+  <section id="formats" class="js-scroll">
+    <h2 class="section-title">Услуги и форматы</h2>
+    <p class="section-lead">
+      От быстрого ответа на один вопрос до полного сопровождения новорождённого.
+    </p>
+
+    <div class="formats-grid">
+      <article class="format-card" id="card-ask">
+        <div>
+          <div class="format-icon">?</div>
+          <h3 class="format-title">«Просто спросить»</h3>
+          <p class="format-desc">
+            У вас один конкретный вопрос — у меня развернутый ответ. Быстро, четко, по делу.
+          </p>
+          <p class="format-meta">
+            20 мин в чате. Примеры: «Что это за пятно?», «Расшифруйте анализ».
+          </p>
+          <div class="format-price">1&nbsp;000&nbsp;₽</div>
+        </div>
+        <div class="format-footer">
+          <div class="format-chip">1 вопрос</div>
+          <button class="btn btn-primary btn-small" type="button" onclick="openServiceModal('ask')">
+            Подробнее
+          </button>
+        </div>
+      </article>
+
+      <article class="format-card" id="card-24h">
+        <div>
+          <div class="format-icon">24</div>
+          <h3 class="format-title">Онлайн-консультация</h3>
+          <p class="format-desc">
+            Подходит, когда вопросов много. Подробно разбираем ситуацию, даю рекомендации и успокаиваю.
+          </p>
+          <p class="format-meta">
+            24 часа в чате. Отвечаю в рабочее время (09:00–21:00).
+          </p>
+          <div class="format-price">2&nbsp;300&nbsp;₽</div>
+        </div>
+        <div class="format-footer">
+          <div class="format-chip">сутки</div>
+          <button class="btn btn-primary btn-small" type="button" onclick="openServiceModal('consult')">
+            Подробнее
+          </button>
+        </div>
+      </article>
+
+      <article class="format-card" id="card-7days">
+        <div>
+          <div class="format-icon">7</div>
+          <h3 class="format-title">Сопровождение по болезни</h3>
+          <p class="format-desc">
+            Ребенок заболел? Я на связи неделю. Контролирую динамику, корректирую лечение, если нужно.
+          </p>
+          <p class="format-meta">
+            7 дней поддержки. Ежедневный контроль и спокойствие мамы.
+          </p>
+          <div class="format-price">3&nbsp;900&nbsp;₽</div>
+        </div>
+        <div class="format-footer">
+          <div class="format-chip">1 неделя</div>
+          <button class="btn btn-primary btn-small" type="button" onclick="openServiceModal('7days')">
+            Подробнее
+          </button>
+        </div>
+      </article>
+
+      <article class="format-card" id="card-newborn">
+        <div>
+          <div class="format-icon">👶</div>
+          <h3 class="format-title">Сопровождение новорожденных</h3>
+          <p class="format-desc">
+            Поддержка по всем фронтам: кормление, сон, уход, анализы.
+          </p>
+          <p class="format-meta">
+            Отвечаю в рабочее время (09:00–21:00 по Москве).
+          </p>
+          <div class="format-price">7&nbsp;000&nbsp;₽ · 17&nbsp;000&nbsp;₽</div>
+        </div>
+        <div class="format-footer">
+          <div class="format-chip">1 или 3 месяца</div>
+          <button class="btn btn-primary btn-small" type="button" onclick="openServiceModal('newborn')">
+            Подробнее
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="js-scroll">
+    <h2 class="section-title">Обо мне</h2>
+
+    <div class="about-grid card">
+      <div class="about-main">
+        <p>
+          <strong>Привет, меня зовут Артём.</strong><br>
+          Я не просто педиатр с 4+ годами практики. Я — папа двух прекрасных дочек, Ники и Лиры, который ночами мерил температуру, сражался с коликами и... знаете что понял?
+        </p>
+
+        <p>99% родительских страхов рождаются там, где встречаются:</p>
+        <ul class="about-bullets">
+          <li>Медицинские мифы ("Давайте прогреем ушки варёным яйцом!")</li>
+          <li>Бабушкины советы ("Мы вас так растили — и ничего!")</li>
+          <li>Гугл-диагнозы ("Доктор, это точно не менингит? Я читала симптомы...")</li>
+        </ul>
+
+        <p>
+          Когда родилась Ника, я — действующий врач — понял: чтобы помогать другим родителям, нужно стать мостом между кабинетом доктора и детской комнатой.
+        </p>
+
+        <p><strong>Я создал пространство, если вы:</strong></p>
+        <ul class="about-bullets">
+          <li>Просыпаетесь в 3 ночи проверять дыхание малыша</li>
+          <li>Путаетесь в советах из мамских чатов</li>
+          <li>Мечтаете, чтобы врач говорил с вами, а не с компьютером.</li>
+        </ul>
+        
+        <p>
+          Здесь не будет запугиваний, рекламы «волшебных» БАДов и нравоучений.
+          Только проверенные факты, личный опыт отца и 1000+ часов практики — без воды и паники.
+        </p>
+      </div>
+
+      <div class="about-aside">
+        <!-- СЛОТ ДЛЯ ФОТО ВРАЧА -->
+        <div class="about-photo">
+          <img src="images/about-photo.jpg" alt="Врач-педиатр Артём Логачёв" loading="lazy" decoding="async">
+        </div>
+
+        <div class="about-highlight">
+          <strong>Я — педиатр. Но даже я боялся.</strong>
+          <p style="margin-top:6px; font-size:13px; color:var(--c-muted);">
+            Все мои учебники и клинический опыт оказались бессильны перед первобытной родительской тревогой, когда родилась моя старшая дочь.
+            Теперь я знаю: моя задача — не просто лечить, а стать вашей точкой опоры.
+          </p>
+        </div>
+
+        <div class="about-highlight">
+          <strong>Мой блог</strong>
+          <p style="margin-top:6px; font-size:13px; color:var(--c-muted);">
+            Веду блог о детском здоровье, развитии и жизни нашей семьи — делюсь проверенной информацией и историями из реальной жизни.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section id="checklist" class="js-scroll">
+    <h2 class="section-title">Чек-лист «5 опасных лекарств-пустышек»</h2>
+
+    <div class="checklist-wrap card">
+      <div>
+        <p class="section-lead">
+          Краткий гид о популярных «лекарствах», которые не работают или могут навредить.
+          Сэкономьте деньги и не перегружайте организм ребёнка.
+        </p>
+        <ul class="checklist-points">
+          <li>Без воды: только факты;</li>
+          <li>Альтернативы: что действительно нужно делать;</li>
+          <li>Безопасность и доказательная медицина.</li>
+        </ul>
+        <button class="btn btn-checklist" type="button" onclick="window.open('files/checklist-5-pustyshek.pdf','_blank')">
+          Скачать PDF чек-лист
+        </button>
+      </div>
+
+      <div class="checklist-cover">
+        <img src="images/checklist-cover.jpg" alt="Обложка чек-листа" loading="lazy" decoding="async">
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="js-scroll">
+    <h2 class="section-title">Часто задаваемые вопросы (FAQ)</h2>
+
+    <div class="faq-grid">
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Что выбрать: «Просто спросить» или 24 часа?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          Если у вас один конкретный вопрос и нужен быстрый ответ — берите «Просто спросить» (20 мин в чате).
+          Если вопросов несколько по одной теме и нужна полноценная переписка с уточнениями — формат на 24 часа.
+          Если ребенок болеет и нужен контроль динамики — сопровождение на 7 дней.
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Как проходит общение?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          В удобном закрытом чате Telegram или на платформе Docma.ru / Express.Doctor (текст и/или аудио).
+          Можно присылать фото, видео, анализы.
+          Я отвечаю в рабочее время: с 09:00 до 21:00 по Москве.
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Как быстро я получу ответ?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          Я отвечаю на заявку в течение 24 часов. В формате «Просто спросить» — один развернутый ответ. В формате 24 часа — активная переписка в течение суток. При сопровождении я на связи ежедневно в рабочие часы.
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Ночью можно писать?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          Да, можно — я отвечу утром. Ночью мы спим, чтобы оставаться в ресурсе.
+          В случае экстренных симптомов — вызывайте скорую помощь!
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Входит ли расшифровка анализов?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          Да. Помогу понять значения и что они значат в контексте симптомов.
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Корректируете ли вы назначения других врачей?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          Я даю второе мнение и объясняю, почему назначение могло появиться, разбираю целесообразность по доказательной базе и рекомендую, как обсудить это очно со своим врачом.
+        </div>
+      </article>
+      
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Можно ли вернуть деньги?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          Если услуга не стартовала — да, сделаем возврат. Если консультация началась — возврат не предусмотрен, но мы можем договориться о переносе на другой формат.
+        </div>
+      </article>
+
+      <article class="faq-item">
+        <div class="faq-header">
+          <div class="faq-title">Можно ли подключить второго родителя?</div>
+          <div class="faq-toggle">+</div>
+        </div>
+        <div class="faq-body">
+          Да, так удобнее принимать решения вместе.
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- SOCIALS & CONTACTS BLOCK -->
+  <section id="socials" class="js-scroll">
+    <div class="social-block">
+      <h2 class="social-title-lg">Контакты и Соцсети</h2>
+
+      <div class="social-row">
+        <a href="https://t.me/doc_ladoshki" class="social-icon" target="_blank" aria-label="Telegram Channel">
+          <img src="images/social-telegram.png" alt="Telegram" loading="lazy" decoding="async">
+        </a>
+        <a href="https://vk.com/doc_ladoshki" class="social-icon" target="_blank" aria-label="VK">
+          <img src="images/social-vk.png" alt="VK" loading="lazy" decoding="async">
+        </a>
+        <a href="https://www.instagram.com/doc_ladoshki" class="social-icon" target="_blank" aria-label="Instagram">
+          <img src="images/social-instagram.png" alt="Instagram" loading="lazy" decoding="async">
+        </a>
+        <a href="https://www.tiktok.com/@doc_ladoshki" class="social-icon" target="_blank" aria-label="TikTok">
+          <img src="images/social-tiktok.png" alt="TikTok" loading="lazy" decoding="async">
+        </a>
+        <a href="https://youtube.com/@doc_ladoshki" class="social-icon" target="_blank" aria-label="YouTube">
+          <img src="images/social-youtube.png" alt="YouTube" loading="lazy" decoding="async">
+        </a>
+      </div>
+
+      <div class="qr-row">
+        <a href="https://dc24.docma.ru/logachev" target="_blank" rel="noopener" class="service-btn">
+          <img src="images/qr-docma.png" alt="Docma Icon">
+          <span>Docma</span>
+        </a>
+        <a href="https://qr.express.doctor/?doctor_id=165339" target="_blank" rel="noopener" class="service-btn">
+          <img src="images/qr-expressdoctor.png" alt="Express.Doctor Icon">
+          <span>Express.Doctor</span>
+        </a>
+      </div>
+
+      <div class="ext-links">
+        <a href="https://docmedartem.taplink.ws/" target="_blank">
+          <span>Taplink (все ссылки)</span>
+        </a>
+        <a href="https://dc24.docma.ru/logachev" target="_blank">
+          <span>Профиль на Docma</span>
+        </a>
+        <a href="https://qr.express.doctor/?doctor_id=165339" target="_blank">
+          <span>Профиль на Express.Doctor</span>
+        </a>
+        <a href="https://t.me/timmi_laury_bot" target="_blank">
+          <span>Telegram Бот (для записи)</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section id="reviews" class="js-scroll">
+    <h2 class="section-title">Отзывы родителей</h2>
+    <div class="carousel-section-card">
+      <div class="carousel-shell">
+        <div class="card-carousel" data-carousel="reviews">
+          <button class="carousel-arrow prev" type="button" data-carousel-prev aria-label="Назад">&lt;</button>
+          <div class="carousel-track">
+            <div class="carousel-item is-active"><img src="images/review1.jpg" alt="Отзыв 1" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/review2.jpg" alt="Отзыв 2" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/review3.jpg" alt="Отзыв 3" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/review4.jpg" alt="Отзыв 4" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/review5.jpg" alt="Отзыв 5" loading="lazy" decoding="async"></div>
+          </div>
+          <button class="carousel-arrow next" type="button" data-carousel-next aria-label="Вперед">&gt;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CERTIFICATES -->
+  <section id="certificates" class="js-scroll">
+    <h2 class="section-title">Сертификаты и дипломы</h2>
+    <p class="section-lead" style="text-align:center; margin-bottom:12px;">
+      Веду блог о детском здоровье и родительском спокойствии, постоянно учусь и делюсь знаниями.
+    </p>
+    <div class="carousel-section-card">
+      <div class="carousel-shell">
+        <div class="card-carousel" data-carousel="certs">
+          <button class="carousel-arrow prev" type="button" data-carousel-prev aria-label="Назад">&lt;</button>
+          <div class="carousel-track">
+            <div class="carousel-item is-active"><img src="images/cert1.png" alt="Сертификат 1" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/cert2.jpg" alt="Сертификат 2" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/cert3.png" alt="Сертификат 3" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/cert4.png" alt="Сертификат 4" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/cert5.png" alt="Сертификат 5" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/diploma_page1.jpg" alt="Диплом стр 1" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/diploma_page2.jpg" alt="Диплом стр 2" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/cert6.jpg" alt="Сертификат 6 (placeholder)" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/cert7.jpg" alt="Сертификат 7 (placeholder)" loading="lazy" decoding="async"></div>
+            <div class="carousel-item"><img src="images/cert8.jpg" alt="Сертификат 8 (placeholder)" loading="lazy" decoding="async"></div>
+          </div>
+          <button class="carousel-arrow next" type="button" data-carousel-next aria-label="Вперед">&gt;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DISCLAIMER -->
+  <section id="disclaimer" class="js-scroll">
+    <div class="disclaimer-card">
+      <div class="disclaimer-icon">!</div>
+      <div>
+        <div class="disclaimer-title">Важно: онлайн-консультация не заменяет очный приём</div>
+        <div>
+          Консультация носит информационный характер и не является медицинской услугой.
+          Для постановки диагноза и назначения лечения необходим очный осмотр.
+          При угрожающих жизни состояниях вызывайте скорую помощь.
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL OVERLAY -->
+<div class="modal-backdrop" id="service-modal-backdrop" onclick="closeServiceModal(event)">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-close" onclick="closeServiceModal(event)" aria-label="Закрыть">&times;</button>
+    <div class="modal-body" id="service-modal-body">
+      <!-- Content injected via JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+  /* --- Mobile Menu --- */
+  function toggleMenu() {
+    const nav = document.getElementById('main-nav');
+    nav.classList.toggle('is-open');
+  }
+
+  function closeMenu() {
+    const nav = document.getElementById('main-nav');
+    nav.classList.remove('is-open');
+  }
+
+  /* --- Scroll Reveal --- */
+  const scrollEls = document.querySelectorAll('.js-scroll');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, {threshold:.1});
+  scrollEls.forEach(el => io.observe(el));
+
+  /* --- FAQ Accordion --- */
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('click', () => {
+      item.classList.toggle('open');
+    });
+  });
+
+  /* --- Carousel --- */
+  function initCarousel(root){
+    const track = root.querySelector('.carousel-track');
+    const items = Array.from(root.querySelectorAll('.carousel-item'));
+    if(!track || items.length === 0) return;
+    let index = 0;
+
+    function update(){
+      track.style.transform = `translateX(-${index * 100}%)`;
+      items.forEach((item,i) => {
+        item.classList.toggle('is-active', i === index);
+      });
+    }
+
+    root.querySelector('[data-carousel-prev]')?.addEventListener('click', () => {
+      index = (index - 1 + items.length) % items.length;
+      update();
+    });
+    root.querySelector('[data-carousel-next]')?.addEventListener('click', () => {
+      index = (index + 1) % items.length;
+      update();
+    });
+    update();
+  }
+  document.querySelectorAll('.card-carousel').forEach(initCarousel);
+
+  /* --- Form Handling --- */
+  const contactForm = document.getElementById('contact-form');
+  const statusEl = document.getElementById('submit-status');
+
+  if(contactForm){
+    contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if(!statusEl) return;
+      
+      statusEl.textContent = 'Отправляем заявку...';
+      setTimeout(() => {
+        statusEl.textContent = 'Спасибо! Заявка отправлена. Я свяжусь с вами в ближайшее время.';
+        statusEl.className = 'submit-status ok';
+        contactForm.reset();
+      }, 1000);
+    });
+  }
+
+  /* --- Service Modal Logic --- */
+  const serviceData = {
+    'ask': {
+      title: '«Просто спросить»',
+      price: '1000₽',
+      content: `
+        <div class="modal-text">
+          <p>Увидели странную сыпь? Сомневаетесь, можно ли гулять после прививки? Нужно понять, что значит одна строчка в анализе?</p>
+          <p>Иногда для родительского спокойствия не нужна длительная консультация. Нужен лишь один быстрый, четкий и профессиональный ответ на конкретный вопрос.</p>
+          <h4>Что это такое?</h4>
+          <p>Это мини-консультация в чате, которая длится <strong>20 минут</strong>. За это время вы можете задать один волнующий вас вопрос и получить на него исчерпывающий ответ.</p>
+          <h4>Как это работает?</h4>
+          <ul>
+            <li>Вы пишете мне свой вопрос.</li>
+            <li>При необходимости присылаете фото, видео или результаты анализов.</li>
+            <li>Я присылаю вам подробный ответ в формате текстового или аудиосообщения.</li>
+          </ul>
+          <h4>Идеально, когда:</h4>
+          <ul>
+            <li>Нужен ответ в стиле «да/нет» с развернутым пояснением.</li>
+            <li>Нужно расшифровать один-два показателя в анализах.</li>
+            <li>Хотите уточнить дозировку или совместимость лекарств.</li>
+            <li>Нужно понять, является ли симптом «красным флагом».</li>
+            <li>Стоите в аптеке и не знаете, что выбрать.</li>
+          </ul>
+          <p>Быстро, доступно и по делу.</p>
+        </div>`
+    },
+    'consult': {
+      title: 'Онлайн-консультация (24 часа)',
+      price: '2300₽',
+      content: `
+        <div class="modal-text">
+          <p>У ребенка внезапно появилась сыпь? Сомневаетесь, нужно ли сбивать температуру? Хотите обсудить результаты анализов или прикорм?</p>
+          <p>Вопросы о здоровье детей часто возникают неожиданно. 24-часовая онлайн-консультация — это ваш личный чат с педиатром для решения ваших вопросов.</p>
+          <h4>Как это работает?</h4>
+          <p>Вы описываете свою проблему, и я открываю для вас персональный чат. В течение 24 часов вы можете задавать любые уточняющие вопросы по вашей теме, присылать фото или видео.</p>
+          <p>Я отвечаю в рабочее время (с 09:00 до 21:00 по Москве). Ночью мы спим, чтобы быть здоровыми!</p>
+          <h4>С какими вопросами можно обратиться?</h4>
+          <ul>
+            <li>Сыпь и кожные реакции.</li>
+            <li>Симптомы ОРВИ (лечить или нет?).</li>
+            <li>Пищеварение, стул, запор/диарея.</li>
+            <li>Прикорм и питание.</li>
+            <li>Расшифровка анализов.</li>
+            <li>Сон и режим.</li>
+            <li>Вопросы по прививкам.</li>
+          </ul>
+        </div>`
+    },
+    '7days': {
+      title: 'Сопровождение по болезни (7 дней)',
+      price: '3900₽',
+      content: `
+        <div class="modal-text">
+          <p>Ребенок заболел. Температура, кашель, плохое самочувствие... Этот сценарий знаком каждому родителю и всегда выбивает из колеи.</p>
+          <p>Онлайн-сопровождение по болезни — это ваш личный педиатр на связи всю неделю, чтобы вы прошли этот период спокойно и уверенно.</p>
+          <h4>Что входит в 7-дневное сопровождение?</h4>
+          <ul>
+            <li><strong>Ежедневный контроль:</strong> Мы будем на связи каждый день, чтобы отслеживать динамику.</li>
+            <li><strong>Разбор симптомов:</strong> Объясню, почему возникает симптом и чего ожидать.</li>
+            <li><strong>Коррекция лечения:</strong> Разберемся с дозировками, уберем лишние препараты.</li>
+            <li><strong>Ответы в рабочее время:</strong> (09:00–21:00 по Москве).</li>
+            <li><strong>План восстановления:</strong> Рекомендации после выздоровления.</li>
+          </ul>
+          <p>Главная цель — пройти этот путь спокойно, без лишних лекарств и с четким пониманием, что вы все делаете правильно.</p>
+        </div>`
+    },
+    'newborn': {
+      title: 'Сопровождение новорожденных',
+      price: '1 мес — 7000₽ / 3 мес — 17000₽',
+      content: `
+        <div class="modal-text">
+          <p>Первый год с новорожденным — это волшебное, но и очень тревожное время. «Правильно ли я все делаю?», «Почему он плачет?», «Хватает ли молока?»</p>
+          <p>Онлайн-сопровождение — ваша персональная поддержка, не выходя из дома.</p>
+          <h4>Что входит в онлайн-сопровождение?</h4>
+          <ul>
+            <li>Следим за здоровьем: набор веса, сон, стул, самочувствие.</li>
+            <li>Помощь в кормлении (ГВ/ИВ): техника, частота, хватает ли.</li>
+            <li>Решение беспокойств: колики, срыгивания, желтушка, опрелости.</li>
+            <li>Комфортный быт: уход, купание, режим дня.</li>
+            <li>Поддержка и ответы на вопросы в рабочее время (09:00–21:00 по Москве).</li>
+          </ul>
+          <h4>Варианты:</h4>
+          <ul>
+            <li><strong>1 месяц (7000р):</strong> Для уверенного старта и адаптации.</li>
+            <li><strong>3 месяца (17000р):</strong> Полное сопровождение «четвертого триместра».</li>
+          </ul>
+          <p>Помните: спокойные родители — залог здоровья малыша.</p>
+        </div>`
+    }
+  };
+
+  function openServiceModal(type) {
+    const data = serviceData[type];
+    if (!data) return;
+
+    const modalBody = document.getElementById('service-modal-body');
+    modalBody.innerHTML = `
+      <h3>${data.title}</h3>
+      <div class="modal-price">${data.price}</div>
+      ${data.content}
+    `;
+
+    document.getElementById('service-modal-backdrop').classList.add('is-visible');
+    document.body.classList.add('modal-open');
+  }
+
+  function closeServiceModal(e) {
+    if (e.target === e.currentTarget || e.target.closest('.modal-close')) {
+      document.getElementById('service-modal-backdrop').classList.remove('is-visible');
+      document.body.classList.remove('modal-open');
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.getElementById('service-modal-backdrop').classList.remove('is-visible');
+      document.body.classList.remove('modal-open');
+    }
+  });
+</script>
+</body>
+</html>
